@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concepts CMS — Yasuaki Kameoka</title>
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script defer src="admin.js"></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <a class="site-link" href="../index.html">Yasuaki Kameoka</a>
+        <h1>Concepts CMS</h1>
+      </div>
+      <div class="header-actions">
+        <p class="status-text" id="session-status">Checking session...</p>
+        <button class="ghost-button" id="sign-out-button" type="button" hidden>Sign out</button>
+      </div>
+    </header>
+
+    <section class="auth-panel" id="auth-panel">
+      <div class="auth-copy">
+        <p class="eyebrow">Admin</p>
+        <h2>Sign in to edit Concepts</h2>
+      </div>
+      <form class="auth-form" id="auth-form">
+        <label>
+          Email
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          Password
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Sign in</button>
+        <p class="form-message" id="auth-message"></p>
+      </form>
+    </section>
+
+    <section class="editor-layout" id="editor-layout" hidden>
+      <aside class="concept-list-panel">
+        <div class="panel-title-row">
+          <p class="eyebrow">Concepts</p>
+          <button class="icon-button" id="new-concept-button" type="button" aria-label="New concept">+</button>
+        </div>
+        <div class="concept-list" id="concept-list"></div>
+      </aside>
+
+      <section class="editor-panel">
+        <form id="concept-form">
+          <div class="editor-toolbar">
+            <div>
+              <p class="eyebrow">Editor</p>
+              <h2 id="editor-heading">Select a concept</h2>
+            </div>
+            <div class="toolbar-actions">
+              <button class="ghost-button" id="refresh-button" type="button">Refresh</button>
+              <button type="submit">Save</button>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label>
+              Title
+              <input id="title" name="title" type="text" required>
+            </label>
+            <label>
+              Slug
+              <input id="slug" name="slug" type="text" required pattern="[a-z0-9-]+">
+            </label>
+            <label>
+              Sort order
+              <input id="sort_order" name="sort_order" type="number" step="1">
+            </label>
+            <label class="checkbox-label">
+              <input id="is_published" name="is_published" type="checkbox">
+              Published
+            </label>
+          </div>
+
+          <label>
+            Summary override
+            <input id="summary_override" name="summary_override" type="text" placeholder="Usually empty. Uses ## Summary when blank.">
+          </label>
+
+          <label>
+            Related titles
+            <input id="related_titles" name="related_titles" type="text" placeholder="Comma-separated, e.g. Geneplore Model">
+          </label>
+
+          <div class="markdown-area">
+            <label>
+              Markdown
+              <textarea id="body_markdown" name="body_markdown" spellcheck="true"></textarea>
+            </label>
+            <section class="preview-panel">
+              <p class="eyebrow">Preview</p>
+              <div class="preview" id="preview"></div>
+            </section>
+          </div>
+
+          <p class="form-message" id="save-message"></p>
+        </form>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,975 @@
+@import url('https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --heading: #1a1a1a;
+  --text: #2d2d2d;
+  --muted: #767676;
+  --border: #d8d8d8;
+  --max-width: 720px;
+}
+
+[data-theme="dark"] {
+  --bg: #111111;
+  --header-bg: rgba(17, 17, 17, 0.9);
+  --heading: #f0f0f0;
+  --text: #d4d4d4;
+  --muted: #999999;
+  --border: #444444;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Zen Old Mincho', serif;
+  font-weight: 400;
+  line-height: 1.85;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* =========================
+   Header / Nav
+   ========================= */
+header {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: var(--max-width);
+  padding: 2.25rem 1.5rem 1rem;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--header-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.site-name {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-decoration: none;
+  color: var(--heading);
+}
+
+nav {
+  display: flex;
+  gap: 2.25rem;
+  align-items: center;
+}
+
+nav a {
+  font-size: 0.7rem;
+  text-decoration: none;
+  color: var(--muted);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+nav a:hover,
+nav a.active {
+  color: var(--heading);
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0;
+  margin-left: 0.5rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--heading);
+}
+
+.theme-toggle:focus {
+  outline: none;
+}
+
+.theme-toggle:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+}
+
+.theme-toggle::before,
+.theme-toggle::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+}
+
+.theme-toggle[data-icon="moon"]::before {
+  width: 0.86rem;
+  height: 0.86rem;
+  border-radius: 50%;
+  box-shadow: inset -0.28rem 0 0 currentColor;
+}
+
+.theme-toggle[data-icon="sun"]::before {
+  width: 0.58rem;
+  height: 0.58rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.theme-toggle[data-icon="sun"]::after {
+  width: 1rem;
+  height: 1rem;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 0 / 1px 0.18rem no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 100% / 1px 0.18rem no-repeat,
+    linear-gradient(90deg, currentColor, currentColor) 0 50% / 0.18rem 1px no-repeat,
+    linear-gradient(90deg, currentColor, currentColor) 100% 50% / 0.18rem 1px no-repeat,
+    linear-gradient(45deg, transparent 43%, currentColor 43%, currentColor 57%, transparent 57%) 14% 14% / 0.2rem 0.2rem no-repeat,
+    linear-gradient(-45deg, transparent 43%, currentColor 43%, currentColor 57%, transparent 57%) 86% 14% / 0.2rem 0.2rem no-repeat,
+    linear-gradient(-45deg, transparent 43%, currentColor 43%, currentColor 57%, transparent 57%) 14% 86% / 0.2rem 0.2rem no-repeat,
+    linear-gradient(45deg, transparent 43%, currentColor 43%, currentColor 57%, transparent 57%) 86% 86% / 0.2rem 0.2rem no-repeat;
+}
+
+/* =========================
+   Main
+   ========================= */
+main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 6.25rem 1.5rem 6rem;
+}
+
+/* =========================
+   Section（罫線なし、余白で区切る）
+   ========================= */
+section {
+  padding: 4.5rem 0 0;
+  scroll-margin-top: 6.25rem;
+}
+
+section.profile-section {
+  padding-top: 5rem;
+}
+
+.section-label {
+  font-size: 0.92rem;
+  line-height: 1.2;
+  letter-spacing: 0.22em;
+  color: var(--text);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  font-weight: 400;
+}
+
+.home-index > section:not(.profile-section) {
+  position: relative;
+}
+
+@media (min-width: 920px) {
+  .home-index > section:not(.profile-section) .section-label {
+    position: absolute;
+    top: 4.65rem;
+    left: -8.25rem;
+    width: 6.25rem;
+    margin-bottom: 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+  }
+
+  .home-index > .profile-section + section .section-label {
+    top: 3.15rem;
+  }
+}
+
+/* =========================
+   Profile (top section)
+   ========================= */
+.profile-wrap {
+  display: flex;
+  gap: 2.75rem;
+  align-items: flex-start;
+}
+
+.profile-photo {
+  width: 177px;
+  height: 177px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.profile-info h1 {
+  font-family: 'Zen Old Mincho', serif;
+  font-weight: 400;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  color: var(--heading);
+  margin-bottom: 1.5rem;
+  white-space: nowrap;
+}
+
+.profile-info .ja-name {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.15rem;
+  color: var(--text);
+  letter-spacing: 0.18em;
+  margin-bottom: 0.9rem;
+}
+
+.profile-info .subtitle {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+.profile-section + section {
+  padding-top: 3rem;
+}
+
+.profile-info .tagline {
+  font-size: 0.875rem;
+  line-height: 1.95;
+  margin-bottom: 2.25rem;
+  color: var(--text);
+}
+
+/* =========================
+   SNS Links（中黒区切り、下線なし）
+   ========================= */
+.sns-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sns-links a {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+.sns-links a:hover {
+  color: var(--heading);
+}
+
+.sns-links a + a::before {
+  content: "·";
+  margin: 0 1.1rem;
+  color: var(--muted);
+}
+
+/* =========================
+   Summary text
+   ========================= */
+.summary-text {
+  font-size: 0.875rem;
+  line-height: 1.95;
+  margin-bottom: 1.75rem;
+  color: var(--text);
+}
+
+/* =========================
+   Detail link（READ MORE 形式）
+   ========================= */
+.detail-link,
+.pub-link,
+.back-link {
+  display: inline-block;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+.detail-link:hover,
+.pub-link:hover,
+.back-link:hover {
+  color: var(--heading);
+}
+
+/* =========================
+   Career (index: 現職のみ)
+   ========================= */
+.career-item {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.75rem;
+}
+
+.career-period {
+  color: var(--muted);
+  min-width: 90px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+/* =========================
+   Concepts
+   ========================= */
+.concept-map-link {
+  display: inline-block;
+  margin-top: 1.35rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.concept-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
+  padding: 1.35rem 1.25rem;
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.concept-card:hover {
+  border-color: var(--muted);
+  color: var(--heading);
+  transform: translateY(-2px);
+}
+
+.concept-title {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.15rem;
+  color: var(--heading);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  margin-bottom: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.concept-title-related {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+}
+
+.concept-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+
+.concept-map-body {
+  max-width: 720px;
+  margin-bottom: 3rem;
+}
+
+.concept-map-epigraph {
+  margin: 0 0 2.25rem;
+  padding: 0 0 0 1.25rem;
+  border-left: 1px solid var(--border);
+  color: var(--heading);
+}
+
+.concept-map-epigraph p {
+  margin: 0 0 0.35rem;
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.concept-map-epigraph cite {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.concept-map-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* =========================
+   Aspiration
+   ========================= */
+.aspiration-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.aspiration-card {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: 1.25rem;
+  min-height: 116px;
+  padding: 1.15rem 1.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.aspiration-card:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.aspiration-card:hover {
+  border-color: var(--muted);
+  color: var(--heading);
+  transform: translateX(4px);
+}
+
+.aspiration-kicker {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  padding-top: 0.2rem;
+}
+
+.aspiration-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.aspiration-title {
+  color: var(--heading);
+  font-size: 0.98rem;
+  letter-spacing: 0.06em;
+  line-height: 1.65;
+}
+
+.aspiration-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.85;
+}
+
+/* =========================
+   Publications
+   ========================= */
+.pub-item {
+  font-size: 0.85rem;
+  line-height: 1.9;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+
+.pub-item a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--muted);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s ease;
+}
+
+.pub-item a:hover {
+  text-decoration-color: var(--text);
+}
+
+.pub-item:last-of-type {
+  margin-bottom: 2.25rem;
+}
+
+/* =========================
+   Reflection list
+   ========================= */
+.reflection-list {
+  margin-bottom: 2.25rem;
+}
+
+.reflection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.reflection-list a {
+  font-size: 0.875rem;
+  color: var(--text);
+  transition: color 0.2s ease;
+}
+
+.reflection-list a:hover {
+  color: var(--muted);
+}
+
+.reflection-date {
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.reflection-empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* =========================
+   Footer
+   ========================= */
+footer {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 4rem 1.5rem 3rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* =========================
+   About page
+   ========================= */
+.long-text {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--text);
+  word-break: auto-phrase;
+}
+
+.long-text p + p {
+  margin-top: 1.5rem;
+}
+
+.long-text .sns-links {
+  margin-top: 2.5rem;
+}
+
+.style-core {
+  padding-top: 7rem;
+}
+
+.style-core + section {
+  padding-top: 7rem;
+}
+
+.style-core .long-text {
+  max-width: 34rem;
+  margin-left: clamp(1rem, 7vw, 4rem);
+  font-size: 1rem;
+  line-height: 2.08;
+  letter-spacing: 0.03em;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.timeline-period {
+  color: var(--muted);
+  min-width: 130px;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  padding-top: 0.15em;
+}
+
+.timeline-body {
+  line-height: 1.7;
+}
+
+.timeline-body .org {
+  font-weight: 400;
+  color: var(--heading);
+}
+
+.timeline-body .role {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.1em;
+}
+
+/* =========================
+   Reflection article
+   ========================= */
+.article-header {
+  padding: 2rem 0 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.article-header h1 {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.55;
+  color: var(--heading);
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.article-date {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.article-related-title {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.article-body {
+  font-size: 0.9rem;
+  line-height: 2;
+  color: var(--text);
+}
+
+.article-body p {
+  margin-bottom: 1.5rem;
+}
+
+.article-body .concept-epigraph {
+  margin: 0 0 2.5rem;
+}
+
+.article-body .concept-epigraph > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 2;
+  margin-bottom: 0;
+}
+
+.article-body .concept-epigraph blockquote {
+  border-left: 1px solid var(--border);
+  padding-left: 1.25rem;
+  margin: 0 0 1.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 2;
+}
+
+.article-body .concept-epigraph blockquote:last-child {
+  margin-bottom: 0;
+}
+
+.article-body .concept-epigraph blockquote p {
+  margin-bottom: 0;
+}
+
+.article-body .concept-summary {
+  max-width: 34rem;
+  font-size: 1rem;
+  line-height: 2.08;
+  letter-spacing: 0.03em;
+  color: var(--heading);
+  margin: 0 clamp(1rem, 7vw, 4rem) 2.75rem;
+}
+
+.article-body h2 {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--heading);
+  letter-spacing: 0.05em;
+  margin-top: 2.75rem;
+  margin-bottom: 1rem;
+}
+
+/* back link spacing inside article */
+.article-body + .back-link {
+  margin-top: 3.5rem;
+}
+
+/* Markdown generated elements inside article-body */
+.article-body h1 {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--heading);
+  letter-spacing: 0.05em;
+  margin-top: 2.75rem;
+  margin-bottom: 1rem;
+}
+
+.article-body h3 {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--heading);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.resonances-section {
+  margin-top: 3rem;
+}
+
+.resonances-section h2 {
+  margin-top: 0;
+  margin-bottom: 0.65rem;
+}
+
+.resonance-block {
+  margin: 1.25rem 0 2.75rem;
+}
+
+.resonances-section .resonance-block:first-of-type {
+  margin-top: 0;
+}
+
+.resonance-block h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.resonance-body {
+  border-left: 1px solid var(--line);
+  padding-left: clamp(1rem, 3vw, 1.75rem);
+  margin-left: clamp(0.5rem, 4vw, 2.5rem);
+}
+
+.resonance-body p {
+  color: var(--text);
+}
+
+.resonance-body p:last-child {
+  margin-bottom: 0;
+}
+
+.resonance-body blockquote {
+  border-left: 1px solid var(--line);
+  padding-left: 1rem;
+  margin: 1.25rem 0 1.5rem clamp(0.25rem, 2vw, 1rem);
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.9;
+  font-style: normal;
+}
+
+.resonance-body blockquote p {
+  margin-bottom: 0;
+}
+
+.resonance-body blockquote p + p {
+  margin-top: 0.55rem;
+}
+
+.article-body a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--muted);
+}
+
+.article-body a:hover {
+  text-decoration-color: var(--text);
+}
+
+.article-body ul,
+.article-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.article-body li {
+  margin-bottom: 0.35rem;
+}
+
+.article-body blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 1.25rem;
+  margin: 1.75rem 0;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.article-body blockquote p {
+  margin-bottom: 0;
+}
+
+.article-body blockquote p + p {
+  margin-top: 0.55rem;
+}
+
+.article-body code {
+  font-family: 'SF Mono', 'Fira Mono', 'Courier New', monospace;
+  font-size: 0.82em;
+  background: var(--border);
+  padding: 0.15em 0.4em;
+  border-radius: 2px;
+}
+
+.article-body pre {
+  background: var(--border);
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 1.75rem 0;
+  border-radius: 2px;
+}
+
+.article-body pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.article-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+}
+
+/* =========================
+   404
+   ========================= */
+.not-found {
+  text-align: center;
+  padding: 7rem 0;
+}
+
+.not-found h1 {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--heading);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.1em;
+}
+
+.not-found p {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-bottom: 2.5rem;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+@media (max-width: 600px) {
+  header {
+    padding: 1.5rem 1.25rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  nav {
+    flex-wrap: wrap;
+    gap: 0.8rem 1.4rem;
+  }
+
+  main {
+    padding: 8.25rem 1.25rem 4rem;
+  }
+
+  section {
+    padding-top: 5rem;
+    scroll-margin-top: 8.25rem;
+  }
+
+  .profile-section + section {
+    padding-top: 3rem;
+  }
+
+  .profile-wrap {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .profile-photo {
+    width: 146px;
+    height: 146px;
+  }
+
+  .profile-info h1 {
+    font-size: 1.85rem;
+    letter-spacing: 0.08em;
+    white-space: normal;
+  }
+
+  .career-item,
+  .timeline-item {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .timeline-period,
+  .career-period {
+    min-width: unset;
+  }
+
+  .concept-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .concept-map-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aspiration-card {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 1rem 0;
+  }
+
+  .reflection-list li {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  /* SNS: モバイルでは中黒を消して縦並びに */
+  .sns-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .sns-links a + a::before {
+    display: none;
+  }
+}

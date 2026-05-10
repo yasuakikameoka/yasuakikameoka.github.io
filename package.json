@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "build": "node src/generators/build-all.js",
+    "build:concepts": "node src/generators/build-concepts.js",
+    "concepts:md-to-sql": "node src/generators/concepts-md-to-sql.js",
+    "serve": "node src/dev-server.js"
+  },
+  "devDependencies": {}
+}

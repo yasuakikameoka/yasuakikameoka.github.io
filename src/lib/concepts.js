@@ -1,74 +1,18 @@
 import { readFile, readdir } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export async function loadConcepts() {
-  await loadEnvFile();
-
-  const concepts = await loadFromSupabase().catch(async (error) => {
-    console.warn(`Supabase fetch skipped: ${error.message}`);
-    return loadFromSeed();
-  });
+  const concepts = await loadFromMarkdown();
 
   return concepts
     .filter((concept) => concept.is_published !== false)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 }
 
-async function loadFromSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    throw new Error('SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are not set');
-  }
-
-  const endpoint = new URL('/rest/v1/concepts', url);
-  endpoint.searchParams.set('select', 'slug,title,related_titles,body_markdown,summary_override,sort_order,is_published,published_at');
-  endpoint.searchParams.set('is_published', 'eq.true');
-  endpoint.searchParams.set('order', 'sort_order.asc');
-
-  const response = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Supabase responded with ${response.status}`);
-  }
-
-  return response.json();
-}
-
-async function loadFromSeed() {
-  const raw = await readFile(new URL('../../content/seed/concepts.json', import.meta.url), 'utf8');
-  const concepts = JSON.parse(raw);
-  const markdownConcepts = await loadFromMarkdown();
-
-  if (markdownConcepts.length === 0) {
-    return concepts;
-  }
-
-  const bySlug = new Map(concepts.map((concept) => [concept.slug, concept]));
-  for (const concept of markdownConcepts) {
-    bySlug.set(concept.slug, {
-      ...bySlug.get(concept.slug),
-      ...concept,
-    });
-  }
-
-  return Array.from(bySlug.values());
-}
-
 async function loadFromMarkdown() {
-  const sourceDir = new URL('../../content/concepts/', import.meta.url);
-  let files = [];
-
-  try {
-    files = await readdir(sourceDir);
-  } catch {
-    return [];
-  }
+  const sourceDir = conceptSourceDirectory();
+  const files = await readdir(sourceDir);
 
   const concepts = [];
   for (const file of files.filter((name) => name.endsWith('.md') && !name.startsWith('_')).sort()) {
@@ -98,28 +42,12 @@ async function loadFromMarkdown() {
   return concepts;
 }
 
-async function loadEnvFile() {
-  let raw = '';
-
-  try {
-    raw = await readFile(new URL('../../.env', import.meta.url), 'utf8');
-  } catch {
-    return;
+function conceptSourceDirectory() {
+  if (process.env.CONCEPTS_DIR) {
+    return pathToFileURL(`${resolve(process.env.CONCEPTS_DIR)}/`);
   }
 
-  for (const line of raw.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-
-    const separator = trimmed.indexOf('=');
-    if (separator === -1) continue;
-
-    const key = trimmed.slice(0, separator).trim();
-    const value = trimmed.slice(separator + 1).trim().replace(/^["']|["']$/g, '');
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
-    }
-  }
+  return new URL('../../content/concepts/', import.meta.url);
 }
 
 function parseFrontmatter(raw) {
@@ -166,7 +94,7 @@ function parseList(value) {
 
 function conceptFromMarkdown(markdown) {
   const lines = String(markdown ?? '').split(/\r?\n/);
-  const start = lines.findIndex((line) => /^#{1,6}\s+Concept\s*$/i.test(line.trim()));
+  const start = lines.findIndex((line) => /^#{1,6}\s+(?:Title|Concept)\s*$/i.test(line.trim()));
   if (start === -1) return {};
 
   const values = [];

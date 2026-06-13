@@ -834,6 +834,21 @@ footer {
   border-radius: 2px;
 }
 
+.article-body .inline-math {
+  display: inline-block;
+  margin-inline: 0.08em;
+  font-family: 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif;
+  font-size: 1.08em;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.article-body .inline-math var {
+  font-family: inherit;
+  font-style: italic;
+}
+
 .article-body pre {
   background: var(--border);
   padding: 1.25rem;

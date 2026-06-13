@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadConcepts } from '../lib/concepts.js';
 import { escapeAttribute, escapeHtml } from '../lib/escape.js';
@@ -24,6 +24,7 @@ export async function buildConcepts() {
   const template = await readFile(new URL('src/templates/concept.html', root), 'utf8');
 
   await mkdir(new URL('concepts/', root), { recursive: true });
+  await clearGeneratedConceptPages();
 
   for (const concept of concepts) {
     const summary = summaryFromConcept(concept);
@@ -46,6 +47,15 @@ export async function buildConcepts() {
   console.log(`Built ${concepts.length} concept pages`);
 }
 
+async function clearGeneratedConceptPages() {
+  const outputDir = new URL('concepts/', root);
+  const files = await readdir(outputDir);
+
+  await Promise.all(files
+    .filter((file) => file.endsWith('.html'))
+    .map((file) => unlink(new URL(file, outputDir))));
+}
+
 async function updateIndexConcepts(concepts) {
   const indexPath = new URL('index.html', root);
   const index = await readFile(indexPath, 'utf8');
@@ -64,27 +74,65 @@ async function updateIndexConcepts(concepts) {
 }
 
 function renderConceptSection(concepts) {
-  const cards = concepts.map((concept) => {
-    const summary = summaryFromConcept(concept);
-    const relatedTitles = normalizeRelatedTitles(concept.related_titles);
-    const related = relatedTitles.length > 0
-      ? `<span class="concept-title-related">${relatedTitles.map(escapeHtml).join(', ')}</span>`
-      : '';
-    return `        <a class="concept-card" href="concepts/${escapeAttribute(concept.slug)}.html">
+  const byTitle = new Map(concepts.map((concept) => [concept.title, concept]));
+  const styleOntology = requireConcept(byTitle, 'スタイルの存在論');
+  const styleConcepts = ['歴史的制作的自己', '志との戯れ', 'ペイオフ駆動']
+    .map((title) => requireConcept(byTitle, title));
+  const lensConcepts = ['動静一如システム', '栄光装置', '代替不可能性']
+    .map((title) => requireConcept(byTitle, title));
+
+  return `    <section id="style" class="style-core">
+      <p class="section-label">Style</p>
+      ${renderFeaturedConcept(styleOntology)}
+      <div class="concept-grid concept-grid-three">
+${styleConcepts.map(renderConceptCard).join('\n\n')}
+      </div>
+    </section>
+
+    <section id="concepts">
+      <p class="section-label">Concepts</p>
+      <p class="section-intro">人生と世界を見るための、三つの視座。</p>
+      <div class="concept-grid concept-grid-three">
+${lensConcepts.map(renderConceptCard).join('\n\n')}
+      </div>
+    </section>`;
+}
+
+function renderFeaturedConcept(concept) {
+  const summary = summaryFromConcept(concept);
+  const relatedTitles = normalizeRelatedTitles(concept.related_titles);
+  const related = relatedTitles.length > 0
+    ? `<span class="concept-title-related">${relatedTitles.map(escapeHtml).join(', ')}</span>`
+    : '';
+
+  return `<a class="style-ontology" href="concepts/${escapeAttribute(concept.slug)}.html">
+        <span class="style-ontology-kicker">An ontology of style</span>
+        <span class="concept-title">
+          <span class="concept-title-main">${escapeHtml(concept.title)}</span>${related}
+        </span>
+        <span class="concept-note">${escapeHtml(summary)}</span>
+      </a>`;
+}
+
+function renderConceptCard(concept) {
+  const summary = summaryFromConcept(concept);
+  const relatedTitles = normalizeRelatedTitles(concept.related_titles);
+  const related = relatedTitles.length > 0
+    ? `<span class="concept-title-related">${relatedTitles.map(escapeHtml).join(', ')}</span>`
+    : '';
+
+  return `        <a class="concept-card" href="concepts/${escapeAttribute(concept.slug)}.html">
           <span class="concept-title">
             <span class="concept-title-main">${escapeHtml(concept.title)}</span>${related}
           </span>
           <span class="concept-note">${escapeHtml(summary)}</span>
         </a>`;
-  }).join('\n\n');
+}
 
-  return `    <section id="concepts">
-      <p class="section-label">Concepts</p>
-      <div class="concept-grid">
-${cards}
-      </div>
-      <a class="concept-map-link" href="concepts/index.html">Concept Map</a>
-    </section>`;
+function requireConcept(byTitle, title) {
+  const concept = byTitle.get(title);
+  if (!concept) throw new Error(`Required concept not found: ${title}`);
+  return concept;
 }
 
 function renderConceptIndexPage(concepts) {
@@ -126,9 +174,9 @@ function renderConceptIndexPage(concepts) {
     <a class="site-name" href="../index.html">Yasuaki Kameoka</a>
     <nav>
       <a href="../index.html">Home</a>
+      <a href="../index.html#style">Style</a>
       <a href="../index.html#concepts">Concepts</a>
       <a href="../index.html#aspiration">Aspiration</a>
-      <a href="../reflection/index.html">Reflection</a>
       <button class="theme-toggle" aria-label="ダークモード切替">☾</button>
     </nav>
   </header>

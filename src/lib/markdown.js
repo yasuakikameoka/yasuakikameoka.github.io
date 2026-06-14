@@ -215,6 +215,7 @@ function renderListNode(list) {
 function plainText(markdown) {
   return String(markdown ?? '')
     .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\$([^$]+)\$/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
@@ -223,5 +224,21 @@ function plainText(markdown) {
 }
 
 function renderInlineMarkdown(value) {
-  return escapeHtml(value).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  const mathExpressions = [];
+  const withMathPlaceholders = String(value).replace(/\$([^$\n]+)\$/g, (_, expression) => {
+    const index = mathExpressions.push(expression.trim()) - 1;
+    return `\u0000MATH${index}\u0000`;
+  });
+
+  return escapeHtml(withMathPlaceholders)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\u0000MATH(\d+)\u0000/g, (_, index) => renderInlineMath(mathExpressions[Number(index)]));
+}
+
+function renderInlineMath(expression) {
+  const accessibleExpression = escapeHtml(expression);
+  const formattedExpression = escapeHtml(expression)
+    .replace(/([A-Za-z]+)/g, '<var>$1</var>');
+
+  return `<span class="inline-math" role="math" aria-label="${accessibleExpression}">${formattedExpression}</span>`;
 }

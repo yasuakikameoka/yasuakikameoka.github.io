@@ -1,11 +1,15 @@
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadAspirations } from '../lib/aspirations.js';
-import { renderMarkdown } from '../lib/markdown.js';
+import { renderConceptMarkdown } from '../lib/markdown.js';
 import { escapeAttribute, escapeHtml } from '../lib/escape.js';
 import { renderResonancesSection } from '../lib/reflection-cards.js';
 
 const root = new URL('../../', import.meta.url);
+
+// Aspiration詳細がまだ準備できていない間は、要約（Summary）のみ表示する。
+// 詳細ページ・カードのリンクを生成しない。準備ができたら false に戻す。
+const SUMMARY_ONLY = true;
 
 export async function buildAspirations(reflectionsBySlug = new Map()) {
   const aspirations = await loadAspirations();
@@ -14,7 +18,10 @@ export async function buildAspirations(reflectionsBySlug = new Map()) {
   await mkdir(new URL('aspirations/', root), { recursive: true });
   await clearGeneratedAspirationPages();
 
+  let pageCount = 0;
   for (const [i, aspiration] of aspirations.entries()) {
+    if (SUMMARY_ONLY || !aspiration.hasBody) continue;
+
     const label = `Aspiration ${String(i + 1).padStart(2, '0')}`;
     const resonances = reflectionsBySlug.get(aspiration.slug) ?? [];
     const html = template
@@ -22,14 +29,15 @@ export async function buildAspirations(reflectionsBySlug = new Map()) {
       .replaceAll('{{description}}', escapeAttribute(aspiration.summary))
       .replaceAll('{{label}}', escapeHtml(label))
       .replaceAll('{{summary}}', escapeHtml(aspiration.summary))
-      .replaceAll('{{body}}', indent(renderMarkdown(aspiration.body_markdown), 8))
+      .replaceAll('{{body}}', indent(renderConceptMarkdown(aspiration.source_markdown), 8))
       .replaceAll('{{resonances}}', renderResonancesSection(resonances));
 
     await writeFile(new URL(`aspirations/${aspiration.slug}.html`, root), html);
+    pageCount += 1;
   }
 
   await updateIndexAspirations(aspirations);
-  console.log(`Built ${aspirations.length} aspiration pages`);
+  console.log(`Built ${pageCount} aspiration pages`);
 }
 
 async function clearGeneratedAspirationPages() {
@@ -60,12 +68,20 @@ async function updateIndexAspirations(aspirations) {
 function renderAspirationSection(aspirations) {
   const cards = aspirations.map((aspiration, i) => {
     const kicker = String(i + 1).padStart(2, '0');
-    return `        <a class="aspiration-card" href="aspirations/${escapeAttribute(aspiration.slug)}.html">
-          <span class="aspiration-kicker">${escapeHtml(kicker)}</span>
+    const inner = `<span class="aspiration-kicker">${escapeHtml(kicker)}</span>
           <span class="aspiration-body">
             <span class="aspiration-title">${escapeHtml(aspiration.title)}</span>
             <span class="aspiration-note">${escapeHtml(aspiration.summary)}</span>
-          </span>
+          </span>`;
+
+    if (SUMMARY_ONLY || !aspiration.hasBody) {
+      return `        <div class="aspiration-card aspiration-card-static">
+          ${inner}
+        </div>`;
+    }
+
+    return `        <a class="aspiration-card" href="aspirations/${escapeAttribute(aspiration.slug)}.html">
+          ${inner}
         </a>`;
   }).join('\n\n');
 

@@ -39,10 +39,67 @@ export function summaryFromConcept(concept) {
   return plainText(concept.body_markdown).slice(0, 90);
 }
 
+export function firstParagraphText(markdown) {
+  const firstParagraph = String(markdown ?? '')
+    .trim()
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .find(Boolean);
+
+  return plainText(firstParagraph ?? '');
+}
+
+const CHANGELOG_LINE = /^(Drafted|Revised|Integrated|Created|Updated|First\s*draft|first_draft)\s*[:：]/i;
+
+export function extractChangelogEntries(markdown) {
+  const section = extractSection(markdown, 'Track changes');
+  if (section) {
+    return section.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  }
+
+  const lines = String(markdown ?? '').replace(/\s+$/, '').split(/\r?\n/);
+  const tail = [];
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const text = lines[i].trim();
+    if (text === '') continue;
+    if (CHANGELOG_LINE.test(text)) {
+      tail.unshift(text);
+    } else {
+      break;
+    }
+  }
+  return tail;
+}
+
+export function stripTrailingChangelog(body) {
+  const lines = String(body).split(/\r?\n/);
+  while (lines.length > 0) {
+    const text = lines[lines.length - 1].trim();
+    if (text === '' || CHANGELOG_LINE.test(text)) {
+      lines.pop();
+    } else {
+      break;
+    }
+  }
+  return lines.join('\n').trim();
+}
+
+export function renderChangelog(entries) {
+  if (entries.length === 0) return '';
+  const items = entries.map((entry) => `    <li>${renderInlineMarkdown(entry)}</li>`).join('\n');
+  return `<footer class="track-changes">
+  <p class="track-changes-label">Track Changes</p>
+  <ul>
+${items}
+  </ul>
+</footer>`;
+}
+
 export function renderConceptMarkdown(markdown) {
   const epigraph = extractSection(markdown, 'Epigraph');
   const summary = extractSection(markdown, 'Summary');
-  const body = extractSection(markdown, 'Body');
+  const changelog = extractChangelogEntries(markdown);
+  const body = stripTrailingChangelog(removeConceptMetadataSections(markdown));
   const parts = [];
 
   if (epigraph) {
@@ -55,18 +112,31 @@ export function renderConceptMarkdown(markdown) {
     parts.push(`<p class="concept-summary">${escapeHtml(plainText(summary))}</p>`);
   }
 
-  parts.push(renderMarkdown(body || markdown));
+  parts.push(renderMarkdown(body));
+
+  const changelogHtml = renderChangelog(changelog);
+  if (changelogHtml) {
+    parts.push(changelogHtml);
+  }
 
   return parts.filter(Boolean).join('\n\n');
 }
 
 export function renderMarkdown(markdown) {
-  const blocks = String(markdown ?? '').trim().split(/\n{2,}/).filter(Boolean);
+  const blocks = normalizeHeadingBoundaries(markdown).split(/\n{2,}/).filter(Boolean);
+  const headingLevelAt = (block) => {
+    const match = block?.match(/^(#{1,6})\s+(.+?)\s*$/);
+    return match ? match[1].length : 0;
+  };
 
-  return blocks.map((block) => {
-    const heading = block.match(/^(#{1,3})\s+(.+)$/);
+  return blocks.map((block, index) => {
+    const heading = block.match(/^(#{1,6})\s+(.+?)\s*$/);
     if (heading) {
       const level = heading[1].length;
+      const next = blocks[index + 1];
+      const nextLevel = headingLevelAt(next);
+      const hasContent = next != null && (nextLevel === 0 || nextLevel > level);
+      if (!hasContent) return '';
       return `<h${level}>${escapeHtml(heading[2].trim())}</h${level}>`;
     }
 
@@ -91,13 +161,77 @@ export function renderMarkdown(markdown) {
       return renderMixedQuoteBlock(lines);
     }
 
+    if (lines.some((line) => line.startsWith('\t'))) {
+      return renderMixedTabBlock(lines);
+    }
+
     if (lines.every((line) => parseListLine(line))) {
       return renderList(lines);
     }
 
     const paragraphLines = lines.map((line) => renderInlineMarkdown(line.trim())).filter(Boolean);
-    return `<p>${paragraphLines.join('<br>')}</p>`;
-  }).join('\n\n');
+    return paragraphLines.map((line) => `<p>${line}</p>`).join('\n');
+  }).filter(Boolean).join('\n\n');
+}
+
+export function removeConceptMetadataSections(markdown) {
+  const omittedSections = new Set(['title', 'concept', 'epigraph', 'summary', 'resonances', 'notes', 'track changes']);
+  const lines = String(markdown ?? '').split(/\r?\n/);
+  const body = [];
+  let skipLevel = 0;
+  let bodyHeadingLevel = 0;
+
+  for (const line of lines) {
+    const heading = line.match(/^(#{1,6})\s+(.+?)\s*$/);
+
+    if (skipLevel > 0) {
+      if (!heading || heading[1].length > skipLevel) continue;
+      skipLevel = 0;
+    }
+
+    if (heading) {
+      const title = heading[2].trim().toLowerCase();
+      if (omittedSections.has(title)) {
+        skipLevel = heading[1].length;
+        continue;
+      }
+
+      if (title === 'body') {
+        bodyHeadingLevel = heading[1].length;
+        continue;
+      }
+
+      if (bodyHeadingLevel > 0 && heading[1].length <= bodyHeadingLevel) {
+        bodyHeadingLevel = 0;
+      }
+    }
+
+    body.push(line);
+  }
+
+  return body.join('\n').trim();
+}
+
+function normalizeHeadingBoundaries(markdown) {
+  const lines = String(markdown ?? '').trim().split(/\r?\n/);
+  const normalized = [];
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const isHeading = /^(#{1,6})\s+(.+?)\s*$/.test(line);
+
+    if (isHeading && normalized.length > 0 && normalized[normalized.length - 1] !== '') {
+      normalized.push('');
+    }
+
+    normalized.push(line);
+
+    if (isHeading && i < lines.length - 1 && lines[i + 1].trim() !== '') {
+      normalized.push('');
+    }
+  }
+
+  return normalized.join('\n').trim();
 }
 
 function renderMixedQuoteBlock(lines) {
@@ -114,6 +248,29 @@ function renderMixedQuoteBlock(lines) {
 
     current.push(line);
     currentIsQuote = isQuote;
+  }
+
+  if (current.length > 0) {
+    groups.push(current.join('\n'));
+  }
+
+  return renderMarkdown(groups.join('\n\n'));
+}
+
+function renderMixedTabBlock(lines) {
+  const groups = [];
+  let current = [];
+  let currentIsTab = null;
+
+  for (const line of lines) {
+    const isTab = line.startsWith('\t');
+    if (current.length > 0 && isTab !== currentIsTab) {
+      groups.push(current.join('\n'));
+      current = [];
+    }
+
+    current.push(line);
+    currentIsTab = isTab;
   }
 
   if (current.length > 0) {

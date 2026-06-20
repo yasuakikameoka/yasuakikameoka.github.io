@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { extractSection } from './markdown.js';
+import { extractSection, removeConceptMetadataSections } from './markdown.js';
 
 export async function loadAspirations() {
   const aspirations = await loadFromMarkdown();
@@ -24,25 +24,34 @@ async function loadFromMarkdown() {
     const raw = await readFile(new URL(file, sourceDir), 'utf8');
     const { data, body } = parseFrontmatter(raw);
 
-    const title = extractSection(body, 'Title').split(/\r?\n/)[0].trim();
+    const title = data.title || firstSectionLine(body, 'Title');
     if (!title) continue;
 
-    const slug = data.slug || slugify(title);
+    const slug = data.slug;
+    if (!slug) continue;
+
     const sortOrder = data.sort_order
       ? Number(data.sort_order)
       : sortOrderFromFilename(file);
+    const bodyMarkdown = removeConceptMetadataSections(body);
 
     aspirations.push({
       slug,
       title,
-      summary: extractSection(body, 'Summary').split(/\r?\n/)[0].trim(),
+      summary: firstSectionLine(body, 'Summary') || data.summary || '',
       sort_order: sortOrder,
-      body_markdown: extractSection(body, 'Body').trim(),
+      body_markdown: bodyMarkdown,
+      source_markdown: body.trim(),
+      hasBody: bodyMarkdown.trim() !== '',
       is_published: parseBoolean(data.is_published, true),
     });
   }
 
   return aspirations;
+}
+
+function firstSectionLine(markdown, heading) {
+  return extractSection(markdown, heading).split(/\r?\n/)[0]?.trim() || '';
 }
 
 function aspirationSourceDirectory() {
@@ -83,12 +92,4 @@ function sortOrderFromFilename(file) {
   const match = normalized.match(/^(\d+)/);
   if (!match) return 999;
   return Number(match[1]);
-}
-
-function slugify(title) {
-  return String(title)
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'untitled';
 }

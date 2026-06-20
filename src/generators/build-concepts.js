@@ -2,7 +2,7 @@ import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadConcepts, loadConceptMap } from '../lib/concepts.js';
 import { escapeAttribute, escapeHtml } from '../lib/escape.js';
-import { renderConceptMarkdown, renderMarkdown, summaryFromConcept } from '../lib/markdown.js';
+import { firstParagraphText, renderConceptMarkdown, renderMarkdown, summaryFromConcept, extractChangelogEntries, stripTrailingChangelog, renderChangelog } from '../lib/markdown.js';
 import { renderResonancesSection } from '../lib/reflection-cards.js';
 
 const root = new URL('../../', import.meta.url);
@@ -74,6 +74,7 @@ function renderConceptSection(concepts, conceptMap) {
   const styleOntology = styleItems[0];
   const styleConcepts = styleItems.slice(1);
   const lensConcepts = sortedConcepts.filter((concept) => concept.section === 'concept');
+  const conceptIntro = firstParagraphText(conceptMap.body_markdown) || conceptMap.section_intro;
 
   if (!styleOntology) {
     throw new Error('Featured style concept not found');
@@ -89,7 +90,7 @@ ${styleConcepts.map(renderConceptCard).join('\n\n')}
 
     <section id="concepts">
       <p class="section-label">Concepts</p>
-      <p class="section-intro">${escapeHtml(conceptMap.section_intro)}</p>
+      <p class="section-intro">${escapeHtml(conceptIntro)}</p>
       <div class="concept-grid concept-grid-four">
 ${lensConcepts.map(renderConceptCard).join('\n\n')}
       </div>
@@ -198,7 +199,8 @@ function renderConceptIndexPage(concepts, conceptMap) {
           <cite>(${escapeHtml(conceptMap.epigraph_attribution)})</cite>
         </blockquote>
 
-${indent(renderMarkdown(conceptMap.body_markdown), 8)}
+${indent(renderMarkdown(stripTrailingChangelog(conceptMap.body_markdown)), 8)}
+${indent(renderChangelog(extractChangelogEntries(conceptMap.body_markdown)), 8)}
       </div>
 
       <div class="concept-map-grid">

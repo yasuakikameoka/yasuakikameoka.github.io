@@ -70,6 +70,14 @@ export function renderMarkdown(markdown) {
       return `<h${level}>${escapeHtml(heading[2].trim())}</h${level}>`;
     }
 
+    if (block.split(/\r?\n/).every((line) => line.startsWith('\t'))) {
+      const lines = block.split(/\r?\n/)
+        .map((line) => line.replace(/^\t/, '').trim())
+        .filter(Boolean)
+        .map((line) => `<p>${renderInlineMarkdown(line)}</p>`);
+      return `<aside class="supplement">\n${lines.join('\n')}\n</aside>`;
+    }
+
     if (block.split(/\r?\n/).every((line) => line.trim().startsWith('>'))) {
       const lines = block.split(/\r?\n/)
         .map((line) => line.trim().replace(/^>\s?/, '').trim())

@@ -2,6 +2,19 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+export async function loadConceptMap() {
+  const mapFile = await findConceptMapFile();
+  const raw = await readFile(new URL(mapFile.file, mapFile.sourceDir), 'utf8');
+  const { data, body } = parseFrontmatter(raw);
+  return {
+    description: data.description || '',
+    section_intro: data.section_intro || '',
+    epigraph: data.epigraph || '',
+    epigraph_attribution: data.epigraph_attribution || '',
+    body_markdown: body.trim(),
+  };
+}
+
 export async function loadConcepts() {
   const concepts = await loadFromMarkdown();
 
@@ -11,43 +24,108 @@ export async function loadConcepts() {
 }
 
 async function loadFromMarkdown() {
-  const sourceDir = conceptSourceDirectory();
-  const files = await readdir(sourceDir);
-
   const concepts = [];
-  for (const file of files.filter((name) => name.endsWith('.md') && !name.startsWith('_')).sort()) {
-    const raw = await readFile(new URL(file, sourceDir), 'utf8');
-    const { data, body } = parseFrontmatter(raw);
-    const concept = conceptFromMarkdown(body);
+  for (const sourceDir of conceptSourceDirectories()) {
+    const files = await readdir(sourceDir);
 
-    if (!data.title && !concept.title) continue;
+    for (const file of files.filter(isMarkdownContentFile).sort()) {
+      const raw = await readFile(new URL(file, sourceDir), 'utf8');
+      const { data, body } = parseFrontmatter(raw);
+      if (isConceptMapFile(file, data)) continue;
 
-    const title = data.title || concept.title;
-    const slug = data.slug || slugForConcept(title, concept.relatedTitle, file);
+      const concept = conceptFromMarkdown(body);
+      if (!data.title && !concept.title) continue;
 
-    const sortOrder = data.sort_order
-      ? Number(data.sort_order)
-      : sortOrderFromFilename(file, concepts.length * 10 + 10);
-    concepts.push({
-      slug,
-      title,
-      related_titles: parseList(data.related_titles) || (concept.relatedTitle ? [concept.relatedTitle] : []),
-      body_markdown: body.trim(),
-      summary_override: data.summary_override || null,
-      sort_order: sortOrder,
-      is_published: parseBoolean(data.is_published, true),
-    });
+      const title = data.title || concept.title;
+      const slug = data.slug || slugForConcept(title, concept.relatedTitle, file);
+
+      const sortOrder = data.sort_order
+        ? Number(data.sort_order)
+        : sortOrderFromFilename(file, concepts.length * 10 + 10);
+      concepts.push({
+        slug,
+        title,
+        section: sectionForConcept(data, title),
+        related_titles: parseList(data.related_titles) || (concept.relatedTitle ? [concept.relatedTitle] : []),
+        body_markdown: body.trim(),
+        summary_override: data.summary_override || null,
+        sort_order: sortOrder,
+        is_published: parseBoolean(data.is_published, true),
+      });
+    }
   }
 
   return concepts;
 }
 
-function conceptSourceDirectory() {
-  if (process.env.CONCEPTS_DIR) {
-    return pathToFileURL(`${resolve(process.env.CONCEPTS_DIR)}/`);
+const sectionByTitle = new Map([
+  ['スタイルの存在論', 'style'],
+  ['歴史的制作的自己', 'style'],
+  ['志との戯れ', 'style'],
+  ['ペイオフ駆動', 'style'],
+  ['動静一如システム', 'concept'],
+  ['代替不可能性', 'concept'],
+  ['栄光装置', 'concept'],
+  ['パラダイム', 'concept'],
+]);
+
+function sectionForConcept(data, title) {
+  if (data.section === 'style' || data.section === 'concept') return data.section;
+  return sectionByTitle.get(title) ?? 'concept';
+}
+
+function conceptSourceDirectories() {
+  if (process.env.STYLE_DIR && process.env.CONCEPT_DIR) {
+    return [
+      pathToFileURL(`${resolve(process.env.STYLE_DIR)}/`),
+      pathToFileURL(`${resolve(process.env.CONCEPT_DIR)}/`),
+    ];
   }
 
-  return new URL('../../content/concepts/', import.meta.url);
+  if (process.env.CONCEPTS_DIR) {
+    return [pathToFileURL(`${resolve(process.env.CONCEPTS_DIR)}/`)];
+  }
+
+  return [new URL('../../content/concepts/', import.meta.url)];
+}
+
+function conceptMapSourceDirectories() {
+  if (process.env.STYLE_DIR && process.env.CONCEPT_DIR) {
+    return [pathToFileURL(`${resolve(process.env.CONCEPT_DIR)}/`)];
+  }
+
+  return conceptSourceDirectories();
+}
+
+async function findConceptMapFile() {
+  const candidates = [];
+
+  for (const sourceDir of conceptMapSourceDirectories()) {
+    const files = (await readdir(sourceDir)).filter(isMarkdownContentFile).sort();
+    for (const file of files) {
+      const raw = await readFile(new URL(file, sourceDir), 'utf8');
+      const { data } = parseFrontmatter(raw);
+      candidates.push({ file, sourceDir, data });
+    }
+  }
+
+  return candidates.find(({ data }) => data.type === 'concept-map')
+    ?? candidates.find(({ file }) => conceptMapFilenamePattern.test(file))
+    ?? candidates.find(({ file }) => file === defaultConceptMapFilename)
+    ?? { file: defaultConceptMapFilename, sourceDir: conceptMapSourceDirectories()[0], data: {} };
+}
+
+const defaultConceptMapFilename = '0. Concepts.md';
+const conceptMapFilenamePattern = /0[_.\s].*(concept|コンセプト)/i;
+
+function isMarkdownContentFile(name) {
+  return name.endsWith('.md') && !name.startsWith('_');
+}
+
+function isConceptMapFile(file, data = {}) {
+  return data.type === 'concept-map'
+    || conceptMapFilenamePattern.test(file)
+    || file === defaultConceptMapFilename;
 }
 
 function parseFrontmatter(raw) {
@@ -121,7 +199,7 @@ function slugForConcept(title, relatedTitle, file) {
   const known = new Map([
     ['スタイルの存在論', 'style-ontology'],
     ['動静一如システム', 'movement-stillness-nonduality-system'],
-    ['代替不可能性', 'irreplaceability'],
+    ['代替不可能性', 'the-singularity-of-being'],
     ['歴史的制作的自己', 'historical-poietic-self'],
     ['栄光装置', 'apparatus-of-glory'],
     ['志との戯れ', 'aspiration-play'],

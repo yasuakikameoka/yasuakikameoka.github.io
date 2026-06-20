@@ -1,9 +1,10 @@
 {
   "type": "module",
   "scripts": {
-    "build": "node src/generators/build-all.js",
-    "build:concepts": "node src/generators/build-concepts.js",
-    "serve": "node src/dev-server.js"
+    "build": "node --env-file-if-exists=.env src/generators/build-all.js",
+    "build:concepts": "node --env-file-if-exists=.env src/generators/build-concepts.js",
+    "serve": "node --env-file-if-exists=.env src/dev-server.js",
+    "publish": "node --env-file-if-exists=.env src/publish.js"
   },
   "devDependencies": {}
 }

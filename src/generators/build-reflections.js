@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadReflections } from '../lib/reflections.js';
-import { renderMarkdown } from '../lib/markdown.js';
+import { renderReflectionMarkdown } from '../lib/markdown.js';
 import { escapeAttribute, escapeHtml } from '../lib/escape.js';
 
 const root = new URL('../../', import.meta.url);
@@ -25,7 +25,7 @@ export async function buildReflections() {
         .replaceAll('{{title}}', escapeHtml(reflection.title))
         .replaceAll('{{description}}', escapeAttribute(reflection.description ?? reflection.title))
         .replaceAll('{{date}}', dateHtml)
-        .replaceAll('{{body}}', indent(renderMarkdown(reflection.body_markdown), 8));
+        .replaceAll('{{body}}', indent(renderReflectionMarkdown(reflection.body_markdown), 8));
 
       await writeFile(new URL(`reflection/posts/${reflection.slug}.html`, root), html);
     }
@@ -86,7 +86,7 @@ ${cards || '        <p class="section-intro">公開中のReflectionはまだあ�
 }
 
 function renderReflectionIndexPage(reflections) {
-  const cards = renderReflectionCards(reflections, 'posts/');
+  const cards = renderReflectionCards(reflections, 'posts/', false);
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -127,7 +127,7 @@ function renderReflectionIndexPage(reflections) {
         <p class="article-related-title">経験と思考の記録</p>
       </div>
 
-      <div class="resonances-grid reflection-index-grid">
+      <div class="resonances-grid reflection-home-grid reflection-index-grid">
 ${cards || '        <p class="section-intro">公開中のReflectionはまだありません。</p>'}
       </div>
 

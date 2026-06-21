@@ -122,6 +122,46 @@ export function renderConceptMarkdown(markdown) {
   return parts.filter(Boolean).join('\n\n');
 }
 
+function stripSection(markdown, name) {
+  const target = name.trim().toLowerCase();
+  const lines = String(markdown ?? '').split(/\r?\n/);
+  const out = [];
+  let skipLevel = 0;
+
+  for (const line of lines) {
+    const heading = line.match(/^(#{1,6})\s+(.+?)\s*$/);
+    if (skipLevel > 0) {
+      if (!heading || heading[1].length > skipLevel) continue;
+      skipLevel = 0;
+    }
+    if (heading && heading[2].trim().toLowerCase() === target) {
+      skipLevel = heading[1].length;
+      continue;
+    }
+    out.push(line);
+  }
+
+  return out.join('\n').trim();
+}
+
+export function renderReflectionMarkdown(markdown) {
+  const changelog = extractChangelogEntries(markdown);
+  let body = String(markdown ?? '');
+  // 先頭のH1（タイトル）はテンプレートのヘッダで表示するため本文から除く
+  body = body.replace(/^\s*#\s+[^\n]*\r?\n?/, '');
+  // Notes セクションはObsidianに残すがHPには出さない
+  body = stripSection(body, 'notes');
+  body = stripTrailingChangelog(body);
+
+  const parts = [renderMarkdown(body)];
+  const changelogHtml = renderChangelog(changelog);
+  if (changelogHtml) {
+    parts.push(changelogHtml);
+  }
+
+  return parts.filter(Boolean).join('\n\n');
+}
+
 export function renderMarkdown(markdown) {
   const blocks = normalizeHeadingBoundaries(markdown).split(/\n{2,}/).filter(Boolean);
   const headingLevelAt = (block) => {
@@ -165,8 +205,11 @@ export function renderMarkdown(markdown) {
       return renderMixedTabBlock(lines);
     }
 
-    if (lines.every((line) => parseListLine(line))) {
-      return renderList(lines);
+    if (lines.some((line) => parseListLine(line))) {
+      if (lines.every((line) => parseListLine(line))) {
+        return renderList(lines);
+      }
+      return renderMixedListBlock(lines);
     }
 
     const paragraphLines = lines.map((line) => renderInlineMarkdown(line.trim())).filter(Boolean);
@@ -271,6 +314,29 @@ function renderMixedTabBlock(lines) {
 
     current.push(line);
     currentIsTab = isTab;
+  }
+
+  if (current.length > 0) {
+    groups.push(current.join('\n'));
+  }
+
+  return renderMarkdown(groups.join('\n\n'));
+}
+
+function renderMixedListBlock(lines) {
+  const groups = [];
+  let current = [];
+  let currentIsList = null;
+
+  for (const line of lines) {
+    const isList = Boolean(parseListLine(line));
+    if (current.length > 0 && isList !== currentIsList) {
+      groups.push(current.join('\n'));
+      current = [];
+    }
+
+    current.push(line);
+    currentIsList = isList;
   }
 
   if (current.length > 0) {

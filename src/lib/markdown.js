@@ -468,8 +468,20 @@ function renderInlineMarkdown(value) {
 
 function renderInlineMath(expression) {
   const accessibleExpression = escapeHtml(expression);
-  const formattedExpression = escapeHtml(expression)
-    .replace(/([A-Za-z]+)/g, '<var>$1</var>');
+  const formattedExpression = escapeHtml(toMathItalic(expression));
 
-  return `<span class="inline-math" role="math" aria-label="${accessibleExpression}">${formattedExpression}</span>`;
+  return `<span class="inline-math" role="math" aria-label="${accessibleExpression}"><var>${formattedExpression}</var></span>`;
+}
+
+function toMathItalic(expression) {
+  return String(expression).replace(/[A-Za-z]/g, (letter) => {
+    const codePoint = letter.codePointAt(0);
+
+    if (letter >= 'A' && letter <= 'Z') {
+      return String.fromCodePoint(0x1d434 + codePoint - 65);
+    }
+
+    if (letter === 'h') return String.fromCodePoint(0x210e);
+    return String.fromCodePoint(0x1d44e + codePoint - 97);
+  });
 }

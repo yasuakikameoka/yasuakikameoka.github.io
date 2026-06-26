@@ -942,17 +942,19 @@ footer {
 
 .article-body .inline-math {
   display: inline-block;
-  margin-inline: 0.08em;
+  margin-inline: 0.1em;
   font-family: 'STIX Two Math', 'Latin Modern Math', 'Hoefler Text', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
-  font-size: 1.12em;
+  font-size: 1.18em;
+  font-weight: 600;
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;
+  color: var(--heading);
 }
 
 .article-body .inline-math var {
   font-family: inherit;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* Track Changes（改訂履歴）— 記事末尾の控えめなフッター */

@@ -43,4 +43,6 @@ StyleとConceptはfrontmatterの `section`、`slug`、`sort_order`、`is_publish
 
 本文中で行頭タブから始まる段落は、引用ではない補足ブロックとして `aside.supplement` に変換されます。
 
+本文中のリンクは `[表示文字](URL)` 形式で書きます。クリック可能な `<a>` に変換され、`http(s)://` で始まる外部リンクは自動的に別タブ（`target="_blank" rel="noopener"`）で開きます。URLを生のまま直書きせず、必ずこの形式を用います。画像記法 `![alt](URL)` はリンク化しません。Obsidian内部リンク `[[...]]` はサイトには出力されません（`## Resonances` などVault専用の導線）。
+
 Reflectionはfrontmatterの`styles`、`concepts`、`aspirations`に接続先のslugをカンマ区切りで指定すると、各詳細ページのResonancesに表示されます。従来の`tags`もStyle・Conceptの接続先として利用できます。

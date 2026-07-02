@@ -1,4 +1,4 @@
-import { escapeHtml } from './escape.js';
+import { escapeHtml, escapeAttribute } from './escape.js';
 
 export function extractSection(markdown, heading) {
   const lines = String(markdown ?? '').split(/\r?\n/);
@@ -456,14 +456,30 @@ function plainText(markdown) {
 
 function renderInlineMarkdown(value) {
   const mathExpressions = [];
-  const withMathPlaceholders = String(value).replace(/\$([^$\n]+)\$/g, (_, expression) => {
+  const links = [];
+
+  // リンク [表示文字](URL) を先に退避する。画像 ![alt](URL) は先頭の ! を否定先読みで除外し、
+  // 表示文字は行内に限定して複数行の貼り付けを巻き込まないようにする。
+  const withLinkPlaceholders = String(value).replace(/(?<!!)\[([^\]\n]+)\]\(([^)\s]+)\)/g, (_, label, url) => {
+    const index = links.push({ label, url }) - 1;
+    return `\u0000LINK${index}\u0000`;
+  });
+
+  const withMathPlaceholders = withLinkPlaceholders.replace(/\$([^$\n]+)\$/g, (_, expression) => {
     const index = mathExpressions.push(expression.trim()) - 1;
     return `\u0000MATH${index}\u0000`;
   });
 
   return escapeHtml(withMathPlaceholders)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\u0000MATH(\d+)\u0000/g, (_, index) => renderInlineMath(mathExpressions[Number(index)]));
+    .replace(/\u0000MATH(\d+)\u0000/g, (_, index) => renderInlineMath(mathExpressions[Number(index)]))
+    .replace(/\u0000LINK(\d+)\u0000/g, (_, index) => renderInlineLink(links[Number(index)]));
+}
+
+function renderInlineLink({ label, url }) {
+  const isExternal = /^https?:\/\//i.test(url);
+  const attributes = isExternal ? ' target="_blank" rel="noopener"' : '';
+  return `<a href="${escapeAttribute(url)}"${attributes}>${escapeHtml(label)}</a>`;
 }
 
 function renderInlineMath(expression) {

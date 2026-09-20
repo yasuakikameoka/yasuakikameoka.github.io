@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { loadReflections } from '../lib/reflections.js';
 import { renderReflectionMarkdown } from '../lib/markdown.js';
 import { escapeAttribute, escapeHtml } from '../lib/escape.js';
+import { canonicalFor, jsonLdScript, OGP_IMAGE, personRef, PERSON_NAME, SITE_NAME, SITE_URL } from '../lib/site.js';
 
 const root = new URL('../../', import.meta.url);
 
@@ -17,15 +18,38 @@ export async function buildReflections() {
     const template = await readFile(new URL('src/templates/reflection.html', root), 'utf8');
 
     for (const reflection of reflections) {
+      const description = reflection.description ?? reflection.title;
+      const canonicalUrl = canonicalFor('reflection', reflection.slug);
+      const dateModified = reflection.date && reflection.modifiedAt < reflection.date
+        ? reflection.date
+        : reflection.modifiedAt;
       const dateHtml = reflection.date
         ? `<time class="article-date" datetime="${escapeAttribute(reflection.date)}">${escapeHtml(formatDate(reflection.date))}</time>`
         : '';
+      const article = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        '@id': `${canonicalUrl}#article`,
+        mainEntityOfPage: canonicalUrl,
+        url: canonicalUrl,
+        headline: reflection.title,
+        description,
+        inLanguage: 'ja',
+        image: OGP_IMAGE,
+        ...(reflection.date ? { datePublished: reflection.date } : {}),
+        dateModified,
+        author: personRef(),
+        publisher: personRef(),
+        isPartOf: { '@id': `${SITE_URL}#website` },
+      };
 
       const html = template
-        .replaceAll('{{title}}', escapeHtml(reflection.title))
-        .replaceAll('{{description}}', escapeAttribute(reflection.description ?? reflection.title))
-        .replaceAll('{{date}}', dateHtml)
-        .replaceAll('{{body}}', indent(renderReflectionMarkdown(reflection.body_markdown), 8));
+        .replaceAll('{{title}}', () => escapeHtml(reflection.title))
+        .replaceAll('{{description}}', () => escapeAttribute(description))
+        .replaceAll('{{canonicalUrl}}', () => escapeAttribute(canonicalUrl))
+        .replaceAll('{{jsonLd}}', () => jsonLdScript(article))
+        .replaceAll('{{date}}', () => dateHtml)
+        .replaceAll('{{body}}', () => indent(renderReflectionMarkdown(reflection.body_markdown), 8));
 
       await writeFile(new URL(`reflection/posts/${reflection.slug}.html`, root), html);
     }
@@ -86,6 +110,21 @@ ${cards || '        <p class="section-intro">公開中のReflectionはまだあ�
 }
 
 function renderReflectionIndexPage(reflections) {
+  const canonicalUrl = canonicalFor('reflection-index');
+  const title = `Reflection — ${SITE_NAME}`;
+  const socialTitle = `Reflection — ${PERSON_NAME}`;
+  const description = '亀岡恭昂のReflection一覧です。';
+  const collectionPage = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: canonicalUrl,
+    name: 'Reflection',
+    description,
+    inLanguage: 'ja',
+    isPartOf: { '@id': `${SITE_URL}#website` },
+    author: personRef(),
+    publisher: personRef(),
+  };
   const cards = renderReflectionCards(reflections, 'posts/', false);
 
   return `<!DOCTYPE html>
@@ -93,15 +132,26 @@ function renderReflectionIndexPage(reflections) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reflection — Yasuaki Kameoka</title>
-  <meta name="description" content="亀岡恭昂のReflection一覧です。">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeAttribute(description)}">
+  <link rel="canonical" href="${escapeAttribute(canonicalUrl)}">
 
-  <meta property="og:title" content="Reflection — 亀岡恭昂">
-  <meta property="og:description" content="亀岡恭昂のReflection一覧です。">
+  <meta property="og:site_name" content="${escapeAttribute(SITE_NAME)}">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:title" content="${escapeAttribute(socialTitle)}">
+  <meta property="og:description" content="${escapeAttribute(description)}">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="../images/OGP.png">
+  <meta property="og:url" content="${escapeAttribute(canonicalUrl)}">
+  <meta property="og:image" content="${escapeAttribute(OGP_IMAGE)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="629">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="../images/OGP.png">
+  <meta name="twitter:title" content="${escapeAttribute(socialTitle)}">
+  <meta name="twitter:description" content="${escapeAttribute(description)}">
+  <meta name="twitter:image" content="${escapeAttribute(OGP_IMAGE)}">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+${indent(jsonLdScript(collectionPage), 2)}
 
   <link rel="stylesheet" href="../style.css">
   <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>

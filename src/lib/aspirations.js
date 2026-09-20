@@ -1,7 +1,8 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractSection, removeConceptMetadataSections } from './markdown.js';
+import { formatDate } from './site.js';
 
 export async function loadAspirations() {
   const aspirations = await loadFromMarkdown();
@@ -21,7 +22,11 @@ async function loadFromMarkdown() {
 
   const aspirations = [];
   for (const file of files.filter((name) => name.endsWith('.md') && !name.startsWith('_')).sort()) {
-    const raw = await readFile(new URL(file, sourceDir), 'utf8');
+    const sourceUrl = new URL(file, sourceDir);
+    const [raw, sourceStat] = await Promise.all([
+      readFile(sourceUrl, 'utf8'),
+      stat(sourceUrl),
+    ]);
     const { data, body } = parseFrontmatter(raw);
 
     const title = data.title || firstSectionLine(body, 'Title');
@@ -38,12 +43,15 @@ async function loadFromMarkdown() {
     aspirations.push({
       slug,
       title,
+      related_titles: parseList(data.related_titles),
       summary: firstSectionLine(body, 'Summary') || data.summary || '',
       sort_order: sortOrder,
       body_markdown: bodyMarkdown,
       source_markdown: body.trim(),
       hasBody: bodyMarkdown.trim() !== '',
       is_published: parseBoolean(data.is_published, true),
+      sourcePath: fileURLToPath(sourceUrl),
+      modifiedAt: formatDate(sourceStat.mtime),
     });
   }
 
@@ -85,6 +93,14 @@ function parseFrontmatter(raw) {
 function parseBoolean(value, fallback) {
   if (value === undefined || value === null || value === '') return fallback;
   return String(value).toLowerCase() === 'true';
+}
+
+function parseList(value) {
+  if (!value) return [];
+  return String(value)
+    .split(/(?<!\\),/)
+    .map((item) => item.replaceAll('\\,', ',').trim())
+    .filter(Boolean);
 }
 
 function sortOrderFromFilename(file) {

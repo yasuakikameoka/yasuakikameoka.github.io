@@ -17,7 +17,7 @@ Obsidianで磨いたMarkdownから、公開用の静的HTMLを生成するプロ
 5. `npm run serve` で生成された `index.html`、Style・Concept・Aspiration詳細、Reflection詳細を確認する
 6. 問題なければ手動で `git add` / `git commit` / `git push` する
 
-`concepts/*.html` と `style/*.html` はビルドのたびに、現在のMarkdownだけから作り直されます。`npm run publish` はビルドと確認手順の表示だけを行い、git操作は行いません。
+`concepts/*.html` と `style/*.html` はビルドのたびに、現在のMarkdownだけから作り直されます。`sitemap.xml`も公開対象の生成ページ、原稿の更新日、生成HTMLのgit変更日から自動生成されるため、直接編集しません。`npm run publish` はビルドと確認手順の表示だけを行い、git操作は行いません。
 
 原稿の正本はObsidian Vaultです。`.env` に次の環境変数を設定すると、ビルドはVaultを直接読みます。値にスペースが含まれていても、Node.jsの `--env-file-if-exists` で読む場合はクォート不要です。
 

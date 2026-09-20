@@ -1,15 +1,12 @@
 # GitHub Publish Checklist
 
-GitHubにアップロードしたあと、公開URLが確定してから確認・差し替えすること。
+GitHubにアップロードしたあと、公開URLで確認すること。
 
 ## 公開URLまわり
 
 - GitHub Pagesの公開URLを確認する。
-- `og:image` と `twitter:image` を絶対URLに差し替える。
-  - 例: `https://<username>.github.io/<repo>/images/OGP.png`
-- 必要なら `og:url` を各ページに追加する。
-  - トップページ
-  - Concept詳細ページ
+- `og:image` と `twitter:image` はテンプレートと生成器が公開先の絶対URLを自動設定するため、手動で差し替えない。
+- `og:url` とcanonicalもテンプレートと生成器が各ページへ自動設定する。`sitemap.xml`の`<loc>`と一致していることを確認する。
 
 ## OGP / SNS表示
 
@@ -38,6 +35,12 @@ GitHubにアップロードしたあと、公開URLが確定してから確認�
 - Obsidian上の原稿が保存されていることを確認する。
 - `npm run build` 後、Concept詳細ページの本文とカード要約を確認する。
 - Vault内の別フォルダを使う場合は `CONCEPTS_DIR` を指定する。
+
+## Google Search Console
+
+1. URL検査でトップページと追加・更新した代表ページを確認する。
+2. `https://yasuakikameoka.github.io/sitemap.xml`を再送信する。
+3. 必要なページで「インデックス登録をリクエスト」を実行する。
 
 ## 最終確認コマンド
 

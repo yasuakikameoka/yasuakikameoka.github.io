@@ -3,6 +3,7 @@
   "scripts": {
     "build": "node --env-file-if-exists=.env src/generators/build-all.js",
     "build:concepts": "node --env-file-if-exists=.env src/generators/build-concepts.js",
+    "build:sitemap": "node --env-file-if-exists=.env src/generators/build-sitemap.js",
     "serve": "node --env-file-if-exists=.env src/dev-server.js",
     "publish": "node --env-file-if-exists=.env src/publish.js"
   },

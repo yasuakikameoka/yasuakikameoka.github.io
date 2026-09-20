@@ -1,10 +1,15 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { formatDate } from './site.js';
 
 export async function loadConceptMap() {
   const mapFile = await findConceptMapFile();
-  const raw = await readFile(new URL(mapFile.file, mapFile.sourceDir), 'utf8');
+  const sourceUrl = new URL(mapFile.file, mapFile.sourceDir);
+  const [raw, sourceStat] = await Promise.all([
+    readFile(sourceUrl, 'utf8'),
+    stat(sourceUrl),
+  ]);
   const { data, body } = parseFrontmatter(raw);
   return {
     description: data.description || '',
@@ -12,6 +17,8 @@ export async function loadConceptMap() {
     epigraph: data.epigraph || '',
     epigraph_attribution: data.epigraph_attribution || '',
     body_markdown: body.trim(),
+    sourcePath: fileURLToPath(sourceUrl),
+    modifiedAt: formatDate(sourceStat.mtime),
   };
 }
 
@@ -29,7 +36,11 @@ async function loadFromMarkdown() {
     const files = await readdir(sourceDir);
 
     for (const file of files.filter(isMarkdownContentFile).sort()) {
-      const raw = await readFile(new URL(file, sourceDir), 'utf8');
+      const sourceUrl = new URL(file, sourceDir);
+      const [raw, sourceStat] = await Promise.all([
+        readFile(sourceUrl, 'utf8'),
+        stat(sourceUrl),
+      ]);
       const { data, body } = parseFrontmatter(raw);
       if (isConceptMapFile(file, data)) continue;
 
@@ -51,6 +62,8 @@ async function loadFromMarkdown() {
         summary_override: data.summary_override || null,
         sort_order: sortOrder,
         is_published: parseBoolean(data.is_published, true),
+        sourcePath: fileURLToPath(sourceUrl),
+        modifiedAt: formatDate(sourceStat.mtime),
       });
     }
   }

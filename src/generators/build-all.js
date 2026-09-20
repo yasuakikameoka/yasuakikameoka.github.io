@@ -4,11 +4,15 @@ import { buildAspirations } from './build-aspirations.js';
 import { loadConcepts } from '../lib/concepts.js';
 import { loadAspirations } from '../lib/aspirations.js';
 import { loadReflections } from '../lib/reflections.js';
+import { buildIndexSeo } from './build-index-seo.js';
+import { buildSitemap } from './build-sitemap.js';
 
+await buildIndexSeo();
 const reflectionsBySlug = await buildReflections();
 await buildConcepts(reflectionsBySlug);
 await buildAspirations(reflectionsBySlug);
 await validateReferences();
+await buildSitemap();
 
 async function validateReferences() {
   const [concepts, aspirations, reflections] = await Promise.all([

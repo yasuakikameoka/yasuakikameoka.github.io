@@ -4,6 +4,7 @@ import { loadConcepts, loadConceptMap } from '../lib/concepts.js';
 import { escapeAttribute, escapeHtml } from '../lib/escape.js';
 import { firstParagraphText, renderConceptMarkdown, renderMarkdown, summaryFromConcept, extractChangelogEntries, stripTrailingChangelog, renderChangelog } from '../lib/markdown.js';
 import { renderResonancesSection } from '../lib/reflection-cards.js';
+import { canonicalFor, jsonLdScript, OGP_IMAGE, personRef, PERSON_NAME, SITE_NAME, SITE_URL } from '../lib/site.js';
 
 const root = new URL('../../', import.meta.url);
 
@@ -23,13 +24,34 @@ export async function buildConcepts(reflectionsBySlug = new Map()) {
       ? `<p class="article-related-title">${relatedTitles.map(escapeHtml).join(' / ')}</p>`
       : '';
     const resonances = reflectionsBySlug.get(concept.slug) ?? [];
+    const canonicalUrl = canonicalFor(concept.section, concept.slug);
+    const article = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      '@id': `${canonicalUrl}#article`,
+      mainEntityOfPage: canonicalUrl,
+      url: canonicalUrl,
+      headline: concept.title,
+      ...(relatedTitles.length > 0 ? {
+        alternativeHeadline: relatedTitles.length === 1 ? relatedTitles[0] : relatedTitles,
+      } : {}),
+      description: summary,
+      inLanguage: 'ja',
+      image: OGP_IMAGE,
+      dateModified: concept.modifiedAt,
+      author: personRef(),
+      publisher: personRef(),
+      isPartOf: { '@id': `${SITE_URL}#website` },
+    };
     const html = template
-      .replaceAll('{{title}}', escapeHtml(concept.title))
-      .replaceAll('{{description}}', escapeAttribute(summary))
-      .replaceAll('{{slug}}', encodeURIComponent(concept.slug))
-      .replaceAll('{{relatedTitles}}', relatedTitlesHtml)
-      .replaceAll('{{body}}', indent(renderConceptMarkdown(concept.body_markdown), 8))
-      .replaceAll('{{resonances}}', renderResonancesSection(resonances));
+      .replaceAll('{{title}}', () => escapeHtml(concept.title))
+      .replaceAll('{{description}}', () => escapeAttribute(summary))
+      .replaceAll('{{canonicalUrl}}', () => escapeAttribute(canonicalUrl))
+      .replaceAll('{{jsonLd}}', () => jsonLdScript(article))
+      .replaceAll('{{slug}}', () => encodeURIComponent(concept.slug))
+      .replaceAll('{{relatedTitles}}', () => relatedTitlesHtml)
+      .replaceAll('{{body}}', () => indent(renderConceptMarkdown(concept.body_markdown), 8))
+      .replaceAll('{{resonances}}', () => renderResonancesSection(resonances));
 
     await writeFile(new URL(`${outDir}${concept.slug}.html`, root), html);
   }
@@ -137,6 +159,21 @@ function renderConceptCard(concept) {
 }
 
 function renderConceptIndexPage(concepts, conceptMap) {
+  const canonicalUrl = canonicalFor('concept-map');
+  const title = `Concept Map — ${SITE_NAME}`;
+  const socialTitle = `Concept Map — ${PERSON_NAME}`;
+  const description = conceptMap.description;
+  const collectionPage = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: canonicalUrl,
+    name: 'Concept Map',
+    description,
+    inLanguage: 'ja',
+    isPartOf: { '@id': `${SITE_URL}#website` },
+    author: personRef(),
+    publisher: personRef(),
+  };
   const cards = concepts.map((concept) => {
     const summary = summaryFromConcept(concept);
     const relatedTitles = normalizeRelatedTitles(concept.related_titles);
@@ -159,15 +196,26 @@ function renderConceptIndexPage(concepts, conceptMap) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Concept Map — Yasuaki Kameoka</title>
-  <meta name="description" content="${escapeAttribute(conceptMap.description)}">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeAttribute(description)}">
+  <link rel="canonical" href="${escapeAttribute(canonicalUrl)}">
 
-  <meta property="og:title" content="Concept Map — 亀岡恭昂">
-  <meta property="og:description" content="${escapeAttribute(conceptMap.description)}">
-  <meta property="og:type" content="article">
-  <meta property="og:image" content="../images/OGP.png">
+  <meta property="og:site_name" content="${escapeAttribute(SITE_NAME)}">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:title" content="${escapeAttribute(socialTitle)}">
+  <meta property="og:description" content="${escapeAttribute(description)}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${escapeAttribute(canonicalUrl)}">
+  <meta property="og:image" content="${escapeAttribute(OGP_IMAGE)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="629">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="../images/OGP.png">
+  <meta name="twitter:title" content="${escapeAttribute(socialTitle)}">
+  <meta name="twitter:description" content="${escapeAttribute(description)}">
+  <meta name="twitter:image" content="${escapeAttribute(OGP_IMAGE)}">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+${indent(jsonLdScript(collectionPage), 2)}
 
   <link rel="stylesheet" href="../style.css">
   <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>

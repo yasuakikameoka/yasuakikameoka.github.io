@@ -1,6 +1,7 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { formatDate } from './site.js';
 
 export async function loadReflections() {
   const reflections = await loadFromMarkdown();
@@ -32,7 +33,11 @@ async function loadFromMarkdown() {
 
   const reflections = [];
   for (const file of files.filter((name) => name.endsWith('.md') && !name.startsWith('_')).sort()) {
-    const raw = await readFile(new URL(file, sourceDir), 'utf8');
+    const sourceUrl = new URL(file, sourceDir);
+    const [raw, sourceStat] = await Promise.all([
+      readFile(sourceUrl, 'utf8'),
+      stat(sourceUrl),
+    ]);
     const { data, body } = parseFrontmatter(raw);
     if (!data.title) continue;
 
@@ -53,6 +58,8 @@ async function loadFromMarkdown() {
       references: [...new Set([...tags, ...styles, ...concepts, ...aspirations])],
       body_markdown: body.trim(),
       is_published: parseBoolean(data.is_published, true),
+      sourcePath: fileURLToPath(sourceUrl),
+      modifiedAt: formatDate(sourceStat.mtime),
     });
   }
   return reflections;

@@ -62,10 +62,14 @@ PCとスマートフォンの双方で読みやすくし、ライトモードと
 │   ├── index.html                    Reflection一覧
 │   └── posts/<slug>.html             各Reflectionの詳細
 ├── 404.html                           存在しないURLの案内
+├── sitemap.xml                        ビルド時に自動生成するサイトマップ
+├── favicon.png                        192×192のサイトアイコン
+├── apple-touch-icon.png               180×180のApple touch icon
 ├── content/concepts/*.md             Vault未設定時のStyle・Conceptフォールバック原稿
 ├── content/reflections/*.md          Vault未設定時のReflectionフォールバック原稿
 ├── src/generators/                    静的HTMLの生成処理
 ├── src/lib/                           原稿の読込・Markdown変換
+│   └── site.js                        URL・人物・SEOの共通定数とヘルパー
 ├── src/templates/                     生成ページのHTMLテンプレート
 ├── style.css                          サイト全体の視覚設計
 ├── script.js                          テーマ切替などの共通動作
@@ -111,6 +115,8 @@ Concept Map ────────────> Style詳細 / Concept詳細
 `Style` と `Concepts` のカード部分は、コンセプト原稿をもとにビルド時に更新される。生成範囲は `<!-- concepts:start -->` と `<!-- concepts:end -->` の間である。`Style` は `section: style` の最小 `sort_order` をfeaturedとして大きく表示し、残りを `sort_order` 順に3枚のカードで表示する。`Concepts` は `section: concept` の全原稿を `sort_order` 順に表示し、現在は「パラダイム」を含む4枚のカードになる。
 
 `Reflection` は、公開中のReflectionを日付降順で上位3件だけ表示する。生成範囲は `<!-- reflections:start -->` と `<!-- reflections:end -->` の間であり、各カードは `reflection/posts/<slug>.html` にリンクする。セクション末尾の「すべて見る」は `reflection/index.html` へリンクする。
+
+トップページのheadにあるSEO情報は、`<!-- seo:start -->` と `<!-- seo:end -->` の間を `src/generators/build-index-seo.js` がビルド時に差し替える。生成区間にはtitle、description、canonical、OGP、Twitter Card、favicon、JSON-LDだけを置き、stylesheetとテーマ切替scriptは`<!-- seo:end -->`の直後に手書きで置く。サイト説明や外部プロフィールURLをHTMLとJavaScriptに二重管理しないため、SEO情報だけを生成対象とする。
 
 ### Concept Map `concepts/index.html`
 
@@ -173,11 +179,37 @@ Style・Concept・Aspiration本文では、行頭タブで始まる段落を引�
 
 ただし、トップページ内のコンセプト生成範囲、トップページ内のAspiration生成範囲、トップページ内のReflection生成範囲、`concepts/*.html`、`style/*.html`、`aspirations/*.html`、`reflection/index.html`、`reflection/posts/*.html` は直接編集しない。
 
+トップページの `<!-- seo:start -->` から `<!-- seo:end -->` までと、`sitemap.xml` もビルド生成物なので直接編集しない。SEOの共通値は `src/lib/site.js`、下層ページのheadは各テンプレート、一覧ページのheadは対応する生成器で変更する。
+
 ### 共通の見た目と動作
 
 - 見た目は原則として `style.css` に集約する
 - テーマ切替などの共通動作は `script.js` に置く
 - ヘッダー、ナビゲーション、フッターの変更時は、手書きページと生成テンプレートの双方を確認する
+
+### SEO / 機械可読レイヤー
+
+ページタイトルはトップを `亀岡恭昂 / Yasuaki Kameoka`、下層を `{{title}} — 亀岡恭昂 / Yasuaki Kameoka` とする。トップのdescriptionは `src/lib/site.js` の `SITE_DESCRIPTION`、詳細ページは原稿の要約またはdescription、Reflectionでdescriptionがない場合はタイトルを使う。Concept MapとReflection一覧は各ページの説明文を使う。
+
+canonicalと`sitemap.xml`の`<loc>`は次の規約で一致させる。slugは`encodeURIComponent`した値をURLへ入れ、サイト内の既存リンクは変更しない。
+
+| ページ | canonical |
+|---|---|
+| トップ | `https://yasuakikameoka.github.io/` |
+| Concept Map | `https://yasuakikameoka.github.io/concepts/` |
+| Concept詳細 | `https://yasuakikameoka.github.io/concepts/<slug>.html` |
+| Style詳細 | `https://yasuakikameoka.github.io/style/<slug>.html` |
+| Reflection一覧 | `https://yasuakikameoka.github.io/reflection/` |
+| Reflection詳細 | `https://yasuakikameoka.github.io/reflection/posts/<slug>.html` |
+| Aspiration詳細 | `https://yasuakikameoka.github.io/aspirations/<slug>.html` |
+
+JSON-LDは、トップを`WebSite`、`ProfilePage`、`Person`の`@graph`、各詳細ページを`Article`、Concept MapとReflection一覧を`CollectionPage`として出力する。人物参照は全ページで`https://yasuakikameoka.github.io/#person`へ統一する。トップの人物情報と外部プロフィールURLは推測で増やさず、`SAME_AS`の追加・変更は`src/lib/site.js`で行う。
+
+OGPとTwitter Cardの画像は、全ページで`https://yasuakikameoka.github.io/images/OGP.png`という絶対URLを使う。faviconはリポジトリ直下の`favicon.png`と`apple-touch-icon.png`をルート相対URLで参照する。
+
+`sitemap.xml`は`src/generators/build-sitemap.js`が公開中かつ`readdir`で実際のHTML出力を確認できたページから作る。同じ出力パスになるslugがある場合は、生成器と同じく最後に書き出されたページをそのファイルの実体として扱い、URLを重複させない。`concepts/index.html`はConcept Mapの予約パスとして詳細ページ候補から除外する。掲載順はトップ、Concept Map、Concept詳細、Style詳細、Reflection一覧、Reflection詳細、Aspiration詳細である。
+
+各ページはリポジトリ相対のHTML出力パスを持ち、`lastmod`には原稿側の更新日とHTML側のgit変更日の新しい方を使う。原稿側は、詳細ページではMarkdownのローカル日付のmtime、Concept Mapではmap原稿と実際に生成されたConcept・Style原稿の最大値、Reflection一覧では実際に生成された公開Reflection原稿の最大値である。HTML側は未コミットまたは未追跡ならビルド当日（JST）、それ以外はそのHTMLに対する`git log`の最新日とする。トップには原稿側の更新日がないためHTML側だけを使い、gitが使えない場合は`index.html`のmtimeにフォールバックする。他ページでgit日付が得られない場合は原稿側の更新日だけを使う。
 
 ## 6. 更新時のルール
 
@@ -204,6 +236,8 @@ Style・Concept・Aspiration本文では、行頭タブで始まる段落を引�
 5. ライトモードとダークモードを確認する
 6. ヘッダー、カード、戻るリンク、外部リンクを確認する
 7. 生成対象のHTMLを直接編集していないことを確認する
-8. 問題がなければ手動で `git add` / `git commit` / `git push` する
+8. `sitemap.xml`に新規ページが載っていることを確認する
+9. 各HTMLのJSON-LDを小さな`node -e`スクリプトで抜き出し、`JSON.parse`が通ることを確認する
+10. 問題がなければ手動で `git add` / `git commit` / `git push` する
 
 公開前の確認事項は `docs/github-publish-checklist.md` も参照する。

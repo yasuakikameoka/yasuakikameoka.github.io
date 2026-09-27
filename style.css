@@ -648,6 +648,23 @@ a.aspiration-card:hover {
   text-decoration-color: var(--text);
 }
 
+.pub-item .pub-commentary {
+  display: inline-block;
+  margin-top: 0.6rem;
+  padding: 0.15rem 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--heading);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: border-color 0.2s ease;
+}
+
+.pub-item .pub-commentary:hover {
+  border-color: var(--muted);
+}
+
 .pub-item:last-of-type {
   margin-bottom: 2.25rem;
 }

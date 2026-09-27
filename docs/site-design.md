@@ -205,6 +205,8 @@ canonicalと`sitemap.xml`の`<loc>`は次の規約で一致させる。slugは`e
 
 JSON-LDは、トップを`WebSite`、`ProfilePage`、`Person`の`@graph`、各詳細ページを`Article`、Concept MapとReflection一覧を`CollectionPage`として出力する。人物参照は全ページで`https://yasuakikameoka.github.io/#person`へ統一する。トップの人物情報と外部プロフィールURLは推測で増やさず、`SAME_AS`の追加・変更は`src/lib/site.js`で行う。
 
+Reflectionの原稿に`doi`（`10.xxxx/...`または`https://doi.org/...`）がある場合、その`Article`に`about`として`ScholarlyArticle`（`@id`と`url`は`https://doi.org/<DOI>`、`identifier`はDOIの`PropertyValue`）を出力する。論文解題のように特定の論文を主題とする記事で使い、検索エンジンに記事と論文の対応を示す。
+
 OGPとTwitter Cardの画像は、全ページで`https://yasuakikameoka.github.io/images/OGP.png`という絶対URLを使う。faviconはリポジトリ直下の`favicon.png`と`apple-touch-icon.png`をルート相対URLで参照する。
 
 `sitemap.xml`は`src/generators/build-sitemap.js`が公開中かつ`readdir`で実際のHTML出力を確認できたページから作る。同じ出力パスになるslugがある場合は、生成器と同じく最後に書き出されたページをそのファイルの実体として扱い、URLを重複させない。`concepts/index.html`はConcept Mapの予約パスとして詳細ページ候補から除外する。掲載順はトップ、Concept Map、Concept詳細、Style詳細、Reflection一覧、Reflection詳細、Aspiration詳細である。

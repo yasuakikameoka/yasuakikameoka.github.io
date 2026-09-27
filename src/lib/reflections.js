@@ -51,6 +51,7 @@ async function loadFromMarkdown() {
       title: data.title,
       date: data.date || null,
       description: data.description || null,
+      doi: normalizeDoi(data.doi, fileURLToPath(sourceUrl)),
       tags,
       styles,
       concepts,
@@ -63,6 +64,27 @@ async function loadFromMarkdown() {
     });
   }
   return reflections;
+}
+
+// frontmatter の doi は `10.xxxx/...` でも `https://doi.org/10.xxxx/...` でも受け付け、DOI 本体に揃える。
+// URL 形式ならパーセント符号化を戻す。DOI の形でない値は警告して無視する。
+function normalizeDoi(value, sourceLabel) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  const isUrl = /^https?:\/\/(?:dx\.)?doi\.org\//i.test(raw);
+  let doi = raw.replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)/i, '');
+  if (isUrl) {
+    try {
+      doi = decodeURIComponent(doi);
+    } catch {
+      // 不正なパーセント符号化はそのまま検証に回す
+    }
+  }
+  if (!/^10\.\d{4,9}\/\S+$/.test(doi)) {
+    console.warn(`Ignoring invalid doi "${raw}" in ${sourceLabel}`);
+    return null;
+  }
+  return doi;
 }
 
 function reflectionSourceDirectory() {

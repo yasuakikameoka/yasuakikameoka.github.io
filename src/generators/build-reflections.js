@@ -41,6 +41,7 @@ export async function buildReflections() {
         author: personRef(),
         publisher: personRef(),
         isPartOf: { '@id': `${SITE_URL}#website` },
+        ...(reflection.doi ? { about: scholarlyArticleRef(reflection.doi) } : {}),
       };
 
       const html = template
@@ -60,6 +61,18 @@ export async function buildReflections() {
 
   console.log(`Built ${reflections.length} reflection posts`);
   return reflectionsBySlug(reflections);
+}
+
+// 論文解題など、特定の論文について書いた記事では frontmatter の doi から対象論文を示す。
+function scholarlyArticleRef(doi) {
+  // DOI 内の `/` は区切りとして残し、`#` `?` `%` などは各区間ごとに符号化する。
+  const doiUrl = `https://doi.org/${doi.split('/').map(encodeURIComponent).join('/')}`;
+  return {
+    '@type': 'ScholarlyArticle',
+    '@id': doiUrl,
+    url: doiUrl,
+    identifier: { '@type': 'PropertyValue', propertyID: 'DOI', value: doi },
+  };
 }
 
 async function clearGeneratedReflectionPages(outputDir) {

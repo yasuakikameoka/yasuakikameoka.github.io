@@ -122,6 +122,17 @@ export function renderConceptMarkdown(markdown) {
   return parts.filter(Boolean).join('\n\n');
 }
 
+// `#歴史 #思想` のようなタグだけの行と、`[[ノート名]]` だけの行を除く
+function stripObsidianOnlyLines(markdown) {
+  const tagOnly = /^(?:#[^\s#]+\s*)+$/;
+  const wikilinkOnly = /^(?:\[\[[^\]]+\]\]\s*)+$/;
+  return String(markdown ?? '')
+    .split(/\r?\n/)
+    .filter((line) => !tagOnly.test(line.trim()) && !wikilinkOnly.test(line.trim()))
+    .join('\n')
+    .trim();
+}
+
 function stripSection(markdown, name) {
   const target = name.trim().toLowerCase();
   const lines = String(markdown ?? '').split(/\r?\n/);
@@ -151,6 +162,10 @@ export function renderReflectionMarkdown(markdown) {
   body = body.replace(/^\s*#\s+[^\n]*\r?\n?/, '');
   // Notes セクションはObsidianに残すがHPには出さない
   body = stripSection(body, 'notes');
+  // Obsidian の内部導線（リンク節・タグだけの行・[[...]] だけの行）もHPには出さない
+  body = stripSection(body, 'リンク');
+  body = stripSection(body, 'links');
+  body = stripObsidianOnlyLines(body);
   body = stripTrailingChangelog(body);
 
   const parts = [renderMarkdown(body)];
